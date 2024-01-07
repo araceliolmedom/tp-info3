@@ -1,8 +1,8 @@
 // Importar Three.js
 import * as THREE from 'three';
-
 // para capturar movimiento del mouse
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+
 
 // Crear escena
 const scene = new THREE.Scene();
@@ -40,67 +40,6 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-
-
-// CON IMAGEN DE SILLAS
-// function agregarParedInterior(){
-//   const alturaCilindro = 8; // Altura del cilindro
-//   const radioInferior = 10; // Radio inferior del cilindro
-//   const radioSuperior = 6; // Radio superior del cilindro
-//   const segmentos = 32; // Número de segmentos para la geometría
-
-//   const textureLoader = new THREE.TextureLoader();
-//   textureLoader.load("img/g104.png", (texture) => {
-//     // Configuración de la textura en caso de carga exitosa
-    
-//     const geometry2 = new THREE.CylinderGeometry(radioInferior, radioSuperior, alturaCilindro, segmentos,1, true);
-//     // Utilizar MeshPhongMaterial o MeshStandardMaterial con side: THREE.DoubleSide
-//     const material = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
-//     const cilindro = new THREE.Mesh(geometry2, material);
-//     cilindro.position.y = 0; // Alinear con el plano XZ
-//     // Añadir cilindro a la escena
-//     scene.add(cilindro);
-
-
-//     renderer.render(scene, camera);  
-//   }, undefined, (err) => {
-//     console.error('Error al cargar la textura:', err);
-//   });
-// }
-
-// SIN IMAGEN DE SILLAS
-// function agregarParedInterior() {
-//   const alturaCilindro = 6;
-//   const radioInferior = 10;
-//   const radioSuperior = 6;
-//   const segmentos = 32;
-
-//   const geometry = new THREE.CylinderGeometry(radioInferior, radioSuperior, alturaCilindro, segmentos, 1, true);
-//   geometry.translate( 0, alturaCilindro / 2, 0 );
-//   geometry.rotateX( Math.PI / 2 );
-//   const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-//   const cilindro = new THREE.Mesh(geometry, material);
-//   cilindro.position.y = 0;
-//   scene.add(cilindro);
-// }
-
-function agregarParedExterior() {
-  const alturaCilindro = 6;
-  const radioInferior = 15;
-  const radioSuperior = 15;
-  const segmentos = 32;
-
-  const geometry = new THREE.CylinderGeometry(radioInferior, radioSuperior, alturaCilindro, segmentos, 1, true);
-  geometry.translate( 0, alturaCilindro / 2, 0 );
-  
-  const material = new THREE.MeshBasicMaterial({ color: '#9b9b9b', wireframe: true });
-  const cilindro = new THREE.Mesh(geometry, material);
-  console.log(cilindro.geometry.attributes.position.array)
- 
-  cilindro.position.set(0, 0, 0);
-  scene.add(cilindro);
-}
-
 function agregarCancha() {
   const geometry = new THREE.PlaneGeometry(20, 10);
   const textureLoader = new THREE.TextureLoader();
@@ -119,46 +58,118 @@ function agregarCancha() {
   });
 }
 
-// function butaca(){
-//   const geometry1 = new THREE.BoxGeometry( 0.8, 0.25, 0.5 ); 
-//   geometry1.translate(0.5,0,0)
-//   const material1 = new THREE.MeshBasicMaterial( {color: 0xff0000} ); 
-//   const asiento = new THREE.Mesh( geometry1, material1 ); 
-//   scene.add( asiento );
+function agregarPiso(){
+  const radio=10;
+  const segmentos=32;
+  const geometry= new THREE.CircleGeometry(radio,segmentos);
+  const material=new THREE.MeshBasicMaterial({color:'#0000ff', side: THREE.DoubleSide});
+  const circulo=new THREE.Mesh(geometry,material);
+  circulo.rotation.x = -Math.PI / 2;
 
-//   const geometry2 = new THREE.BoxGeometry( 0.25, 1, 0.5 ); 
-//   geometry2.translate(0,0.5,0)
-//   const material2 = new THREE.MeshBasicMaterial( {color: 0xff0000} ); 
-//   const respaldo = new THREE.Mesh( geometry2, material2 ); 
-//   scene.add( respaldo );
-// }
+  const objeto=new THREE.Object3D();
+  objeto.add(circulo);
+
+  objeto.scale.x+=0.6;
+  scene.add(objeto)
+}
+
+function agregarParedExterior() {
+  const alturaCilindro = 7;
+  const radioInferior = 11;
+  const radioSuperior = 11;
+  const segmentos = 32;
+
+  // Crear la geometría del cilindro
+  const geometry = new THREE.CylinderGeometry(radioInferior, radioSuperior, alturaCilindro, segmentos, 1, true);
+  // const geometry2= new THREE.Cylinder
+  
+  
+  // Crear el material
+  const material = new THREE.MeshBasicMaterial({ color: '#9b9b9b', wireframe: false,side: THREE.DoubleSide });
+  
+  // Crear la malla del cilindro
+  const cilindro = new THREE.Mesh(geometry, material);
+
+  // Añadir la malla del cilindro al objeto 3D
+  const cylinder = new THREE.Object3D();
+  cylinder.add(cilindro);
+
+  // Mover el pivote hacia arriba
+  cilindro.position.y = alturaCilindro / 2; 
+
+  // Escalar el cilindro en el eje y
+  cilindro.scale.x += 0.6;
+
+  // Añadir el objeto 3D a la escena
+  scene.add(cylinder);
+}
 
 function agregarParedInterior() {
-  const alturaCilindro = 6;
-  const radioInferior = 10;
-  const radioSuperior = 6;
-  const segmentos = 60;
+  const alturaCilindro = 8;
+  const radioInferior =6;
+  const radioSuperiorBut = 10;
+  const radioSuperior = 8;
+  const segmentos = 32;
+  const cantButacas=60
 
   const grupoButacas = new THREE.Group();
+  
+  // agregando pared
+  const geometry=new THREE.CylinderGeometry(radioSuperior, radioInferior,alturaCilindro,segmentos, 1, true);
+  const material=new THREE.MeshBasicMaterial({color:'#9b9b9b', wireframe:false, side: THREE.DoubleSide})
+  const cilindro=new THREE.Mesh(geometry,material);
 
-  for(let escalon=1; escalon<=alturaCilindro; escalon++){
+  // Añadir la malla del cilindro al objeto 3D
+  const cylinder = new THREE.Object3D();
+  cylinder.add(cilindro);
 
-    // Crear una serie de butacas y agregarlas al grupo
-    for (let i = 0; i < segmentos; i++) {
-      const angulo = (i / segmentos) * Math.PI * 2;
-      const x = Math.cos(angulo) * (radioInferior+escalon);
-      const z = Math.sin(angulo) * radioInferior;
+  // Mover el pivote hacia arriba
+  cilindro.position.y = alturaCilindro / 2; 
 
-      // Crear butaca
-      const butacaMesh = butaca();
-      butacaMesh.position.set(x, escalon, z);
-      butacaMesh.rotation.y = angulo;
+  // Escalar el cilindro en el eje y
+  cilindro.scale.x += 1.2;
+  cilindro.scale.z += 0.5;
+
+  // Añadir el objeto 3D a la escena
+  scene.add(cylinder);
+
+
+  // agregando butacas
+  for(let escalon=0; escalon<=alturaCilindro; escalon++){
+
+    for (let i = 1; i < cantButacas; i++) {
+    const angulo = (i / cantButacas) * Math.PI * 2;
+    const x = Math.cos(angulo) * (radioSuperiorBut + escalon);
+    const z = Math.sin(angulo) * radioSuperiorBut;
+
+    // Crear butaca
+    const butacaMesh = butaca();
+    butacaMesh.position.set(x, escalon, z);
+
+    // Ajustar la rotación para que la butaca mire hacia el centro
+    butacaMesh.rotation.y = angulo + Math.PI / 2;
+    // Definir el color basado en la posición en el eje vertical
+
+    if (butacaMesh.position.y > alturaCilindro / 2) {
+        // Mitad inferior: Color rojo
+        butacaMesh.children[0].material.color.set(0xff0000); // Rojo
+        butacaMesh.children[1].material.color.set(0xff0000); // Rojo
+    } else {
+        // Mitad superior: Color azul
+        butacaMesh.children[0].material.color.set(0x0000ff); // Azul
+        butacaMesh.children[1].material.color.set(0x0000ff); // Azul
+        // FALTA FORMAR CCP
+        // if((butacaMesh.position.y>0 && butacaMesh.position.y<4)){
+        //   console.log(butacaMesh.position)
+        //   butacaMesh.children[0].material.color.set(0xff0000); // Rojo
+        //   butacaMesh.children[1].material.color.set(0xff0000); // Rojo
+        // }
+    }
 
       // Agregar la butaca al grupo
       grupoButacas.add(butacaMesh);
     }
-}
-
+  }
   // Agregar el grupo de butacas a la escena
   scene.add(grupoButacas);
 }
@@ -188,6 +199,7 @@ function butaca() {
 
 agregarParedInterior();
 agregarParedExterior();
+agregarPiso()
 agregarCancha();
 animate();
 
