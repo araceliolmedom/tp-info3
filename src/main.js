@@ -24,6 +24,32 @@ scene.add(axeHelper);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
+//tamaño
+const sizes = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
+
+//resize
+// para que al achicar o agrandar la pantalla la forma se adapte
+window.addEventListener('resize', () => {
+  //update sizes
+  console.log(window.innerWidth)
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+
+  //update camera
+  camera.aspect = sizes.width / sizes.height
+  camera.updateProjectionMatrix()
+  renderer.setSize( sizes.width , sizes.height)
+
+})
+
+const loop = () => {
+  //renderer.render(scene,camera);
+  window.requestAnimationFrame(loop);
+  
+}
 
 // Crea una instancia de OrbitControls y pasa la cámara y el lienzo (renderer.domElement)
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -202,6 +228,7 @@ agregarParedExterior();
 agregarPiso()
 agregarCancha();
 animate();
+loop();
 
 renderer.render(scene,camera)
 
