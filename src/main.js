@@ -371,7 +371,7 @@ agregarCancha();
 edificio()
 animate();
 loop();
-renderer.render(scene,camera))
+renderer.render(scene,camera);
 
 
 
