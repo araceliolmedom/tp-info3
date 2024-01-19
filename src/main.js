@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 //archivos blender
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+//animacion ventana
+import TWEEN from '@tweenjs/tween.js'
 
 
 // Crear escena
@@ -79,7 +81,10 @@ controls.enableZoom = true;
 // Actualiza los controles en cada fotograma
 function animate() {
   requestAnimationFrame(animate);
+
   controls.update();  // ¡No olvides llamar a update() en tu bucle de animación!
+  //animacion ventana
+  TWEEN.update();
   renderer.render(scene, camera);
 }
 
@@ -298,6 +303,29 @@ function cargarButaca(color, callback) {
   );
 }
 
+// Función para cambiar el color de la ventana
+function cambiarColor(ventana) {
+  // Crear un nuevo tween para animar el color de la ventana
+  const tween = new TWEEN.Tween(ventana.material.color)
+    .to({ r: 1, g: 1, b: 0 }, 1500) // Cambiar a color amarillo en 1.5 segundos
+    .easing(TWEEN.Easing.Quadratic.Out) // Efecto de salida cuadrática para una transición suave
+    .onComplete(() => {
+      // Después de completar la animación, invertir el color y reiniciar el tween
+      tweenBack.start();
+    });
+
+  // Tween para revertir el color de la ventana a blanco
+  const tweenBack = new TWEEN.Tween(ventana.material.color)
+    .to({ r: 0.96, g: 0.94, b: 0.937  }, 1500) // Cambiar a color blanco en 1.5 segundos
+    .easing(TWEEN.Easing.Quadratic.Out) // Efecto de salida cuadrática para una transición suave
+    .onComplete(() => {
+      // Después de completar la animación, reiniciar el tween original
+      tween.start();
+    });
+
+  // Iniciar el primer tween
+  tween.start();
+}
 
 function edificio() {
   const altura = 15;
@@ -376,7 +404,7 @@ function edificio() {
     for (let j = 0; j < numeroVentanas; j++) {
     const ventana = new THREE.Mesh(
       new THREE.BoxGeometry(anchoVentana, alturaVentana, profundidad/2),
-      new THREE.MeshBasicMaterial({ color: '#ffff00' }) // Puedes ajustar el color
+      new THREE.MeshBasicMaterial({ color: '#F4F0EF' }) // Puedes ajustar el color
     );
 
     // Calcular la posición de cada ventana en la parte central del edificio
@@ -385,6 +413,9 @@ function edificio() {
     ventana.position.set(offsetX, offsetY, 15);
 
     scene.add(ventana);
+
+    // Llamar a la función para cambiar el color con la ventana como argumento
+    cambiarColor(ventana);
   }}
 
   // PUERTAS 
@@ -472,6 +503,8 @@ function cargarArco(posicionX, posicionZ, rotacionY) {
   );
 }
 
+
+
 cargarArco(8.6, 1.25, Math.PI / 2); //Arco 1
 cargarArco(-8.6, -1.25, -Math.PI / 2); //Arco 2
 agregarPlanoSuelo();
@@ -483,11 +516,6 @@ edificio()
 animate();
 loop();
 renderer.render(scene,camera);
-
-
-
-
-
 
 
 
