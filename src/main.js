@@ -2,23 +2,27 @@
 import * as THREE from 'three';
 // para capturar movimiento del mouse
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+//archivos blender
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 
 // Crear escena
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb); // Color celeste (sky blue)
+
 
 // para el fondo
-const cubeTextureLoader = new THREE.CubeTextureLoader();
-const environmentMap = cubeTextureLoader.load([
-    'img/fondo/px.png',
-    'img/fondo/nx.png',
-    'img/fondo/py.png',
-    'img/fondo/ny.png',
-    'img/fondo/pz.png',
-    'img/fondo/nz.png'
-])
-console.log(environmentMap)
-scene.background = environmentMap
+// const cubeTextureLoader = new THREE.CubeTextureLoader();
+// const environmentMap = cubeTextureLoader.load([
+//     'img/fondo/px.png',
+//     'img/fondo/nx.png',
+//     'img/fondo/py.png',
+//     'img/fondo/ny.png',
+//     'img/fondo/pz.png',
+//     'img/fondo/nz.png'
+// ])
+// console.log(environmentMap)
+// scene.background = environmentMap
 
 // Crear cámara
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -79,6 +83,26 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+function agregarPlanoSuelo() {
+  const planoGeometry = new THREE.PlaneGeometry(100, 100);
+  const textureLoader = new THREE.TextureLoader();
+
+  textureLoader.load("img/suelo.jpg", (texture) => {
+    const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    const plano = new THREE.Mesh(planoGeometry, material);
+    plano.rotation.x = -Math.PI / 2;
+    plano.position.y = -1; // Ajusta la posición según las necesidades de tu escena
+    scene.add(plano);
+  }, 
+  // Manejo de errores
+  (xhr) => {
+    console.log('Progreso de carga: ', (xhr.loaded / xhr.total * 100) + '%');
+  },
+  (error) => {
+    console.error('Error al cargar la textura del suelo:', error);
+  });
+}
+
 function agregarCancha() {
   const geometry = new THREE.PlaneGeometry(18, 10);
   const textureLoader = new THREE.TextureLoader();
@@ -97,7 +121,7 @@ function agregarCancha() {
   });
 }
 
-function aggregarPiso(){
+function agregarPiso(){
   const radio=10;
   const segmentos=32;
   const geometry= new THREE.CircleGeometry(radio,segmentos);
@@ -147,93 +171,133 @@ function agregarParedExterior() {
 
 function agregarParedInterior() {
   const alturaCilindro = 8;
-  const radioInferior =7;
-  const radioSuperiorBut = 10;
+  const radioInferior = 7;
+  const radioSuperiorBut = 10.5;
   const radioSuperior = 8;
   const segmentos = 32;
-  const cantButacas=70
+  const cantButacas = 70;
 
   const grupoButacas = new THREE.Group();
-  
-  // agregando pared
-  const geometry=new THREE.CylinderGeometry(radioSuperior, radioInferior,alturaCilindro,segmentos, 1, true);
-  const material=new THREE.MeshBasicMaterial({color:'#9b9b9b', wireframe:false, side: THREE.DoubleSide})
-  const cilindro=new THREE.Mesh(geometry,material);
+
+  // Agregando pared
+  const geometry = new THREE.CylinderGeometry(radioSuperior, radioInferior, alturaCilindro, segmentos, 1, true);
+  const material = new THREE.MeshPhongMaterial({ color: '#9b9b9b', side: THREE.DoubleSide }); // Utilizar MeshPhongMaterial para mejor respuesta a la iluminación
+  const cilindro = new THREE.Mesh(geometry, material);
 
   // Añadir la malla del cilindro al objeto 3D
   const cylinder = new THREE.Object3D();
   cylinder.add(cilindro);
 
   // Mover el pivote hacia arriba
-  cilindro.position.y = alturaCilindro / 2; 
+  cilindro.position.y = alturaCilindro / 2;
 
   // Escalar el cilindro en el eje y
   cilindro.scale.x += 1.3;
   cilindro.scale.z += 0.5;
 
+// Configuración de sombras para el cilindro
+  cilindro.castShadow = true;
+  cilindro.receiveShadow = true;
+
   // Añadir el objeto 3D a la escena
   scene.add(cylinder);
 
+ // Agregando butacas
+  for (let escalon = 0; escalon <= alturaCilindro; escalon++) {
+    // Crea separacion entre butacas rojas y azules
+    if (escalon !== alturaCilindro / 2) {
+      for (let i = 1; i < cantButacas; i++) {
+        const angulo = (i / cantButacas) * Math.PI * 2;
+        const x = Math.cos(angulo) * (radioSuperiorBut + escalon);
+        const z = Math.sin(angulo) * radioSuperiorBut;
 
-  // agregando butacas
-  for(let escalon=0; escalon<=alturaCilindro; escalon++){
 
-    for (let i = 1; i < cantButacas; i++) {
-      const angulo = (i / cantButacas) * Math.PI * 2;
-      const x = Math.cos(angulo) * (radioSuperiorBut + escalon);
-      const z = Math.sin(angulo) * radioSuperiorBut;
+        // Determina el color de la butaca según la mitad en la que se encuentre
+        const colorButaca = escalon <= alturaCilindro / 2 ? 0x0000ff /* Azul */ :0xff0000 /* Rojo */;
+          // Eliminamos la columna de butacas del eje x para crear separacion
+        if (Math.abs(z) > 1e-10) { // 10e-10 Pequeña tolerancia para evitar problemas numéricos
+          // Llamando a la función cargarButaca y pasando una callback para manejar el objeto cargado
+          cargarButaca(colorButaca, function (butaca) {
 
-      // Crear butaca
-      const butacaMesh = butaca();
-      
-      butacaMesh.position.set(x, escalon, z);
-      butacaMesh.rotation.y= Math.PI*2-angulo//Math.PI*2-Math.atan(z/x) //(Math.PI / 2-angulo)//Math.PI-Math.atan(z/x)
-      console.log(angulo,Math.PI*2-Math.atan(z/x) )
+            butaca.position.set(x, escalon, z);
+            butaca.lookAt(new THREE.Vector3(0, escalon, 0)); // Hace que la butaca mire hacia el centro del cilindro
 
-      console.log(butacaMesh)
+            // Ajustando la rotación para que siempre se vea de frente al centro del cilindro
+            if (i > cantButacas / 2) {
+              butaca.rotation.y = -angulo + Math.PI;
+            } else {
+              butaca.rotation.y = angulo;
+            }
 
-      // Definir el color basado en la posición en el eje vertical
-      if (butacaMesh.position.y > alturaCilindro / 2) {
-          // Mitad inferior: Color rojo
-          butacaMesh.children[0].material.color.set(0xff0000); // Rojo
-          butacaMesh.children[1].material.color.set(0xff0000); // Rojo
-      } else {
-          // Mitad superior: Color azul
-          butacaMesh.children[0].material.color.set(0x0000ff); // Azul
-          butacaMesh.children[1].material.color.set(0x0000ff); // Azul
+            // Configuración de sombras para las butacas
+            butaca.castShadow = true;
+            butaca.receiveShadow = true;
+
+            // Añadiendo la butaca al grupo de butacas
+            grupoButacas.add(butaca);
+
+         
+          });
+        }
       }
-
-        // Agregar la butaca al grupo
-        grupoButacas.add(butacaMesh);
     }
   }
-  // Agregar el grupo de butacas a la escena
+
+
+  // Añadiendo el grupo de butacas a la escena
   scene.add(grupoButacas);
+  // Configuración de sombras para el grupo de butacas
+  grupoButacas.castShadow = true;
+  grupoButacas.receiveShadow = true;
+
 }
 
 
-function butaca() {
-  const grupoButacas = new THREE.Group();
+//Light
+const lightObject = new THREE.DirectionalLight(0xffffff);
+lightObject.position.set(10, 10, 10); // Ajusta la posición de la luz
+lightObject.target.position.set(0, 0, 0); // Punto hacia el centro del cilindro
+scene.add(lightObject);
+scene.add(lightObject.target);
 
-  // asiento
-  const geometry1 = new THREE.BoxGeometry(0.8, 0.25, 0.5);
-  geometry1.translate(0.5, 0, 0);
+// Función para cargar una butaca desde un archivo .obj
+function cargarButaca(color, callback) {
+  // instantiate a loader
+  const loaderButaca = new OBJLoader();
   
-  const material1 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-  const asiento = new THREE.Mesh(geometry1, material1);
-  grupoButacas.add(asiento);
+  // Define el material para la butaca con el color pasado como parámetro
+  const materialButaca = new THREE.MeshPhongMaterial({ color: color, side: THREE.DoubleSide });
 
-  // respaldo
-  const geometry2 = new THREE.BoxGeometry(0.25, 1, 0.5);
-  geometry2.translate(0.8, 0.5, 0);
-  //geometry2.rotateY(Math.PI)
+  // load butaca
+  loaderButaca.load(
+    // resource URL
+    './src/butaca.obj',
+    // called when resource is loaded
+    function (objectButaca) {
+      // Escala el objeto
+      objectButaca.scale.set(0.8, 0.8, 0.8);
   
-  const material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-  const respaldo = new THREE.Mesh(geometry2, material2);
-  grupoButacas.add(respaldo);
+      // Asigna el nuevo material a la butaca
+      objectButaca.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+          child.material = materialButaca;
+        }
+      });
 
-  return grupoButacas;
+      // Llama a la función de devolución de llamada con el objeto cargado
+      callback(objectButaca);
+    },
+    // called when loading is in progresses
+    function (xhr) {
+      console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+    },
+    // called when loading has errors
+    function (error) {
+      console.log('An error happened', error);
+    }
+  );
 }
+
 
 function edificio() {
   const altura = 15;
@@ -242,7 +306,7 @@ function edificio() {
 
   // parte Principal del edificio
   const geometryPrincipal = new THREE.BoxGeometry(ancho, altura, profundidad);
-  const materialPrincipal = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+  const materialPrincipal = new THREE.MeshBasicMaterial({ color: '#F4F0EF' });
   const edificioPrincipal = new THREE.Mesh(geometryPrincipal, materialPrincipal);
   edificioPrincipal.position.z=13;
   edificioPrincipal.position.y=4;
@@ -253,7 +317,7 @@ function edificio() {
   const profundidadSecundaria=6
 
   const geometryExtremo = new THREE.BoxGeometry(anchoSecundario, altura, profundidadSecundaria);
-  const materialExtremo = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+  const materialExtremo = new THREE.MeshBasicMaterial({ color: '#F4F0EF' });
 
   const extremoIzquierdo = new THREE.Mesh(geometryExtremo, materialExtremo);
   //extremoIzquierdo.rotation.x = Math.PI / 2;
@@ -269,7 +333,7 @@ function edificio() {
   // techito
   const largoTecho=10
   const geometryTecho=new THREE.BoxGeometry(ancho,largoTecho,profundidad);
-  const materialTecho=new THREE.MeshBasicMaterial({color:'#ffffff'});
+  const materialTecho=new THREE.MeshBasicMaterial({color:'#F4F0EF'});
   const techo=new THREE.Mesh(geometryTecho,materialTecho);
   techo.position.y=4+altura/2
   techo.position.z=8
@@ -364,9 +428,56 @@ function edificio() {
 
 }
 
+// Función para cargar un arco desde un archivo .obj
+function cargarArco(posicionX, posicionZ, rotacionY) {
+  // instantiate a loader
+  const loaderArco = new OBJLoader();
+  // load arco
+  loaderArco.load(
+    // resource URL
+    './src/arco.obj',
+    // called when resource is loaded
+    function ( objectArco ) {
+      // Crear un material blanco
+      const materialBlanco = new THREE.MeshStandardMaterial({ color: 0xffffff });
+
+      // Asignar el material blanco al objeto
+      objectArco.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+          child.material = materialBlanco;
+        }
+      });
+
+      // Escala el objeto
+      objectArco.scale.set(0.005, 0.005, 0.005);
+
+      // Rotar el objeto en el eje y 
+      objectArco.rotation.y = rotacionY;
+
+      // Ubicar el arco
+      objectArco.position.x = posicionX;
+      objectArco.position.z = posicionZ;
+
+      // Añadir el arco a la escena
+      scene.add(objectArco);
+    },
+    // called when loading is in progresses
+    function ( xhr ) {
+      console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+    },
+    // called when loading has errors
+    function ( error ) {
+      console.log( 'An error happened', error );
+    }
+  );
+}
+
+cargarArco(8.6, 1.25, Math.PI / 2); //Arco 1
+cargarArco(-8.6, -1.25, -Math.PI / 2); //Arco 2
+agregarPlanoSuelo();
 agregarParedInterior();
 agregarParedExterior();
-aggregarPiso()
+agregarPiso()
 agregarCancha();
 edificio()
 animate();
