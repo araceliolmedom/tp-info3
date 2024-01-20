@@ -1,30 +1,15 @@
-// Importar Three.js
 import * as THREE from 'three';
 // para capturar movimiento del mouse
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 //archivos blender
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 //animacion ventana
-import TWEEN from '@tweenjs/tween.js'
+import TWEEN from '@tweenjs/tween.js';
 
 
 // Crear escena
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb); // Color celeste (sky blue)
-
-
-// para el fondo
-// const cubeTextureLoader = new THREE.CubeTextureLoader();
-// const environmentMap = cubeTextureLoader.load([
-//     'img/fondo/px.png',
-//     'img/fondo/nx.png',
-//     'img/fondo/py.png',
-//     'img/fondo/ny.png',
-//     'img/fondo/pz.png',
-//     'img/fondo/nz.png'
-// ])
-// console.log(environmentMap)
-// scene.background = environmentMap
 
 // Crear cámara
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -65,49 +50,79 @@ window.addEventListener('resize', () => {
 })
 
 const loop = () => {
-  //renderer.render(scene,camera);
   window.requestAnimationFrame(loop);
   
 }
 
-// Crea una instancia de OrbitControls y pasa la cámara y el lienzo (renderer.domElement)
+//OrbitControls
 const controls = new OrbitControls(camera, renderer.domElement);
-// Establece la velocidad de rotación del control
 controls.rotateSpeed = 0.5;
-// Establece la velocidad de acercamiento y alejamiento
 controls.zoomSpeed = 1.2;
-// Activa la capacidad de hacer zoom
 controls.enableZoom = true;
-// Actualiza los controles en cada fotograma
+controls.maxDistance = 50; 
+controls.minPolarAngle = 0; // Establece el ángulo mínimo
+controls.maxPolarAngle = ( Math.PI) / 2; // Establece el ángulo máximo
+
+
+
 function animate() {
   requestAnimationFrame(animate);
+  controls.update(); 
 
-  controls.update();  // ¡No olvides llamar a update() en tu bucle de animación!
   //animacion ventana
   TWEEN.update();
   renderer.render(scene, camera);
 }
 
-function agregarPlanoSuelo() {
-  const planoGeometry = new THREE.PlaneGeometry(100, 100);
-  const textureLoader = new THREE.TextureLoader();
+const cubeTextureLoader = new THREE.CubeTextureLoader();
+const environmentMap = cubeTextureLoader.load([
+    'img/fondo/px.png',
+    'img/fondo/nx.png',
+    'img/fondo/py.png',
+    'img/fondo/ny.png',
+    'img/fondo/pz.png',
+    'img/fondo/nz.png'
+])
+console.log(environmentMap)
+scene.background = environmentMap
 
-  textureLoader.load("img/suelo.jpg", (texture) => {
-    const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-    const plano = new THREE.Mesh(planoGeometry, material);
-    plano.rotation.x = -Math.PI / 2;
-    plano.position.y = -1; // Ajusta la posición según las necesidades de tu escena
-    scene.add(plano);
-  }, 
-  // Manejo de errores
-  (xhr) => {
-    console.log('Progreso de carga: ', (xhr.loaded / xhr.total * 100) + '%');
-  },
-  (error) => {
-    console.error('Error al cargar la textura del suelo:', error);
-  });
+//// SUELO /////
+function agregarPlanoSuelo() {
+ // PASTO
+  const pastoGeometria = new THREE.PlaneGeometry(500, 200)
+  pastoGeometria.rotateY(Math.PI/2)
+  pastoGeometria.rotateZ(Math.PI/2)
+  const pastoTextura = new THREE.TextureLoader().load('img/pasto.jpg')
+  pastoTextura.wrapS = pastoTextura.wrapT = THREE.RepeatWrapping
+  pastoTextura.repeat.set(150, 100)
+  const pastoMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map: pastoTextura })
+  const pastoPlano = new THREE.Mesh(pastoGeometria, pastoMaterial)
+  pastoPlano.translateX(150)
+  pastoPlano.translateY(-1)
+  scene.add(pastoPlano)
+
+  const pastoPlano2 = pastoPlano.clone()
+  pastoPlano2.position.set(0, 0, 0)
+  pastoPlano2.translateY(-1)
+  pastoPlano2.translateX(-150)
+  
+  scene.add(pastoPlano2)
+
+  // VEREDA
+  const veredaGeometria = new THREE.PlaneGeometry(100, 500)
+  veredaGeometria.rotateX(Math.PI/2)
+  const veredaTextura = new THREE.TextureLoader().load('img/vereda.jpeg')
+  veredaTextura.wrapS = veredaTextura.wrapT = THREE.RepeatWrapping
+  veredaTextura.repeat.set(50, 250)
+  const veredaMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map: veredaTextura })
+  const veredaPlano = new THREE.Mesh(veredaGeometria, veredaMaterial)
+  veredaPlano.translateY(-1)
+  scene.add(veredaPlano)
 }
 
+
+
+/// CANCHA ////
 function agregarCancha() {
   const geometry = new THREE.PlaneGeometry(18, 10);
   const textureLoader = new THREE.TextureLoader();
@@ -126,6 +141,7 @@ function agregarCancha() {
   });
 }
 
+/// PISO DE LA CANCHA ///
 function agregarPiso(){
   const radio=10;
   const segmentos=32;
@@ -141,6 +157,7 @@ function agregarPiso(){
   scene.add(objeto)
 }
 
+/// PARED EXTERIOR DEL ESTADIO ///
 function agregarParedExterior() {
   const alturaCilindro = 9;
   const radioInferior = 12;
@@ -154,26 +171,22 @@ function agregarParedExterior() {
   textureLoader.load("img/chapa.png", (texture) => {
     const material = new THREE.MeshBasicMaterial({ map: texture, side:THREE.DoubleSide });
     const cilindro = new THREE.Mesh(geometry, material);
+
     // Añadir la malla del cilindro al objeto 3D
     const cylinder = new THREE.Object3D();
     cylinder.add(cilindro);
-
-    // Mover el pivote hacia arriba
     cilindro.position.y = alturaCilindro / 2; 
-
-    // Escalar el cilindro en el eje y
     cilindro.scale.x += 0.6;
 
-    // Añadir el objeto 3D a la escena
     scene.add(cylinder);
-
-    // Renderizar la escena
     renderer.render(scene, camera);
+
   }, undefined, (err) => {
     console.error('Error al cargar la textura:', err);
   });
 }
 
+/// PARED INTERIOR DEL ESTADIO ///
 function agregarParedInterior() {
   const alturaCilindro = 8;
   const radioInferior = 7;
@@ -184,7 +197,6 @@ function agregarParedInterior() {
 
   const grupoButacas = new THREE.Group();
 
-  // Agregando pared
   const geometry = new THREE.CylinderGeometry(radioSuperior, radioInferior, alturaCilindro, segmentos, 1, true);
   const material = new THREE.MeshPhongMaterial({ color: '#9b9b9b', side: THREE.DoubleSide }); // Utilizar MeshPhongMaterial para mejor respuesta a la iluminación
   const cilindro = new THREE.Mesh(geometry, material);
@@ -192,11 +204,7 @@ function agregarParedInterior() {
   // Añadir la malla del cilindro al objeto 3D
   const cylinder = new THREE.Object3D();
   cylinder.add(cilindro);
-
-  // Mover el pivote hacia arriba
   cilindro.position.y = alturaCilindro / 2;
-
-  // Escalar el cilindro en el eje y
   cilindro.scale.x += 1.3;
   cilindro.scale.z += 0.5;
 
@@ -248,15 +256,12 @@ function agregarParedInterior() {
     }
   }
 
-
-  // Añadiendo el grupo de butacas a la escena
   scene.add(grupoButacas);
+
   // Configuración de sombras para el grupo de butacas
   grupoButacas.castShadow = true;
   grupoButacas.receiveShadow = true;
-
 }
-
 
 //Light
 const lightObject = new THREE.DirectionalLight(0xffffff);
@@ -267,7 +272,6 @@ scene.add(lightObject.target);
 
 // Función para cargar una butaca desde un archivo .obj
 function cargarButaca(color, callback) {
-  // instantiate a loader
   const loaderButaca = new OBJLoader();
   
   // Define el material para la butaca con el color pasado como parámetro
@@ -307,7 +311,7 @@ function cargarButaca(color, callback) {
 function cambiarColor(ventana) {
   // Crear un nuevo tween para animar el color de la ventana
   const tween = new TWEEN.Tween(ventana.material.color)
-    .to({ r: 1, g: 1, b: 0 }, 1500) // Cambiar a color amarillo en 1.5 segundos
+    .to({ r: 0.97, g: 0.95, b: 0 }, 1500) // Cambiar a color amarillo en 1.5 segundos
     .easing(TWEEN.Easing.Quadratic.Out) // Efecto de salida cuadrática para una transición suave
     .onComplete(() => {
       // Después de completar la animación, invertir el color y reiniciar el tween
@@ -316,7 +320,7 @@ function cambiarColor(ventana) {
 
   // Tween para revertir el color de la ventana a blanco
   const tweenBack = new TWEEN.Tween(ventana.material.color)
-    .to({ r: 0.96, g: 0.94, b: 0.937  }, 1500) // Cambiar a color blanco en 1.5 segundos
+    .to({ r: 1, g: 0.98, b: 0  }, 1500) // Cambiar a color blanco en 1.5 segundos
     .easing(TWEEN.Easing.Quadratic.Out) // Efecto de salida cuadrática para una transición suave
     .onComplete(() => {
       // Después de completar la animación, reiniciar el tween original
@@ -327,6 +331,7 @@ function cambiarColor(ventana) {
   tween.start();
 }
 
+/// EDIFICIO PRINCIPAL ///
 function edificio() {
   const altura = 15;
   const ancho = 35;
@@ -348,7 +353,6 @@ function edificio() {
   const materialExtremo = new THREE.MeshBasicMaterial({ color: '#F4F0EF' });
 
   const extremoIzquierdo = new THREE.Mesh(geometryExtremo, materialExtremo);
-  //extremoIzquierdo.rotation.x = Math.PI / 2;
   extremoIzquierdo.position.x = -ancho / 2;
   extremoIzquierdo.position.z=10;
   extremoIzquierdo.position.y=4
@@ -419,7 +423,6 @@ function edificio() {
   }}
 
   // PUERTAS 
-
   const anchoPuerta=3;
   const altoPuerta=8;
   const geometryPuerta=new THREE.BoxGeometry(anchoPuerta,altoPuerta,profundidad);
@@ -432,9 +435,7 @@ function edificio() {
   puerta1.position.set(-(anchoPuerta/2+0.25), 1, 15.5);
   scene.add(puerta2)
 
-
-
-  // cartel
+  // CARTEL
   const altoCartel=4;
   const anchoCartel=8
   
@@ -448,20 +449,15 @@ function edificio() {
     cartel.position.y=altura/2;
     
     scene.add(cartel);
-
-    // Renderizar la escena
     renderer.render(scene, camera);
+
   }, undefined, (err) => {
     console.error('Error al cargar la textura:', err);
   });
-
-  
-
 }
 
 // Función para cargar un arco desde un archivo .obj
 function cargarArco(posicionX, posicionZ, rotacionY) {
-  // instantiate a loader
   const loaderArco = new OBJLoader();
   // load arco
   loaderArco.load(
@@ -504,20 +500,31 @@ function cargarArco(posicionX, posicionZ, rotacionY) {
 }
 
 
+function main(){
+  cargarArco(8.6, 1.25, Math.PI / 2); //Arco 1
+  cargarArco(-8.6, -1.25, -Math.PI / 2); //Arco 2
+  agregarPlanoSuelo();
+  agregarParedInterior();
+  agregarParedExterior();
+  agregarPiso()
+  agregarCancha();
+  edificio()
+  animate();
+  loop();
+  renderer.render(scene,camera);
 
-cargarArco(8.6, 1.25, Math.PI / 2); //Arco 1
-cargarArco(-8.6, -1.25, -Math.PI / 2); //Arco 2
-agregarPlanoSuelo();
-agregarParedInterior();
-agregarParedExterior();
-agregarPiso()
-agregarCancha();
-edificio()
-animate();
-loop();
-renderer.render(scene,camera);
+  document.addEventListener("keydown", onDocumentKeyDown, false);
+  function onDocumentKeyDown(event) {
+    let key = event.key;
+    switch (key) {
+      case 'a':
+        camera.position.set(6,6,9);
+        break;
+      case 's':
+        camera.position.set(0,10,100)
+    }
+  }
+}
 
-
-
-
+main()
 
