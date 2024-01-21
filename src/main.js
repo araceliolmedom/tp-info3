@@ -20,10 +20,6 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement)
 
-// agregando ejes
-const axeHelper=new THREE.AxesHelper(10);
-scene.add(axeHelper);
-
 // agregando luz
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
